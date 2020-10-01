@@ -1,0 +1,44 @@
+Classifier DB
+
+Words
+-------
+Word string, PK
+PlaintextWord string
+Source string
+SeedWord string
+Classification int
+
+Classifications
+----------
+Id int, PK
+Name string
+
+0, Unclassified
+1, Questionable
+2, Typical
+3, Lively
+
+
+Word List DB
+
+Words
+------
+Word string, PK
+Source string,
+Score int
+
+Topics
+------
+Id int PK
+Topic string
+
+Word_Topics
+-------
+Word
+TopicID
+
+Clues
+--------
+Word PK
+Clue string
+TimesUsed int
