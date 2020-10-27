@@ -1,0 +1,54 @@
+html, body {
+    font-family: Verdana, sans-serif;
+}
+
+.container {
+    width: 100%;
+    text-align: center;
+}
+
+.mainDiv {
+    display: inline-block;
+    width: 500px;
+    text-align: left;
+    vertical-align: top;
+    margin: 0 20px;
+}
+
+.word {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.word-selected {
+    background-color: lightblue;
+    border: 1px solid darkblue;
+}
+
+.word-unclassified {
+    color: black;
+}
+.word-lively {
+    color: seagreen;
+}
+.word-normal {
+    color: lighten(black, 50%);
+}
+.word-crosswordese {
+    color: darkgoldenrod;
+}
+.word-iffy {
+    color: sienna;
+}
+
+.category {
+    display: inline-block;
+    background-color: white;
+    border: 1px solid #666;
+    border-radius: 5px;
+    font-size: 12px;
+    padding: 0 5px;
+    margin-left: 10px;
+}
+.category-selected {
+    background-color: lightcoral;
+}
