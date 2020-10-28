@@ -4,5 +4,4 @@ export interface Word {
     word: string;
     qualityClass: QualityClass;
     categories: Map<string, boolean>;
-    isSelected: boolean;
 }

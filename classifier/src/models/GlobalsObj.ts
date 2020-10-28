@@ -5,6 +5,7 @@ export interface GlobalsObj {
     yourWordList?: Word[];
     newWordList?: Word[];
     categories?: string[];
+    clues?: Map<string, string[]>;
 
     listsLoaded?: () => void;
 }

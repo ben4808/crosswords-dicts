@@ -5,11 +5,15 @@ html, body {
 .container {
     width: 100%;
     text-align: center;
+    outline: 0px solid transparent;
+}
+.container:focus {
+    outline: 0px solid transparent;
 }
 
 .mainDiv {
     display: inline-block;
-    width: 500px;
+    width: 400px;
     text-align: left;
     vertical-align: top;
     margin: 0 20px;
@@ -31,7 +35,7 @@ html, body {
     color: seagreen;
 }
 .word-normal {
-    color: lighten(black, 50%);
+    color: #666;
 }
 .word-crosswordese {
     color: darkgoldenrod;
@@ -48,7 +52,22 @@ html, body {
     font-size: 12px;
     padding: 0 5px;
     margin-left: 10px;
+    color: black;
 }
 .category-selected {
     background-color: lightcoral;
+}
+
+.clue {
+    margin: 10px 0;
+    font-size: 11px;
+}
+
+#save_btn {
+    font-size: 16px;
+    border: 2px darkblue solid;
+    background-color: lightblue;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
 }

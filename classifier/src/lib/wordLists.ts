@@ -1,5 +1,6 @@
 import { QualityClass } from "../models/QualityClass";
 import { Word } from "../models/Word";
+import Globals from '../lib/windowService';
 
 export async function loadWordList(url: string, parserFunc: (lines: string[]) => string[]): Promise<Word[]> {
     var startTime = new Date().getTime();
@@ -27,7 +28,6 @@ function parseWordListEntries(entries: string[]): Word[] {
                 word: tokens[0],
                 qualityClass: QualityClass.Unclassified,
                 categories: new Map<string, boolean>(),
-                isSelected: false,
             });
         }
         else {
@@ -35,7 +35,6 @@ function parseWordListEntries(entries: string[]): Word[] {
                 word: tokens[0],
                 qualityClass: wordScoreToQualityClass(tokens[1]),
                 categories: new Map<string, boolean>(),
-                isSelected: false,
             })
         }
     });
@@ -73,13 +72,22 @@ export async function loadGinsbergDatabaseCsv(): Promise<Word[]> {
 
 function parseGinsbergDatabaseCsv(lines: string[]): string[] {
     let map = new Map<string, number>();
+    let clues = new Map<string, string[]>();
 
     lines.forEach(line => {
-        let word = line.trim().split(",")[0].toUpperCase();
+        let tokens = line.trim().split(",");
+        let word = tokens[0].toUpperCase();
+        tokens.shift();
+        let clue = tokens.join(",");
+        clue = clue.replace(/^"(.*)"$/, "$1").replaceAll("\"\"", "\"");
         if (word.length !== 3) return;
 
         map.set(word, map.has(word) ? map.get(word)! + 1: 1);
+        if (clues.has(word)) clues.get(word)?.push(clue);
+        else clues.set(word, [clue]);
     });
+
+    Globals.clues = clues;
 
     let arr = Array.from(map.keys());
     arr.sort((a, b) => map.get(a)! - map.get(b)!);

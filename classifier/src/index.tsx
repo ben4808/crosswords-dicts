@@ -5,7 +5,7 @@ import App from './App';
 import { loadGinsbergDatabaseCsv, loadMainWordList } from './lib/wordLists';
 import Globals from './lib/windowService';
 
-Globals.categories = ["Adult"];
+Globals.categories = ["Adult", "Theme"];
 
 loadMainWordList().then(mwl => {
   Globals.yourWordList = mwl;
