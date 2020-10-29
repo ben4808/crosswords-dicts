@@ -105,7 +105,7 @@ function App() {
 
     setShownNewWords(currentWords);
     setShownYourWords(yourWords);
-    if (!selectedSide)
+    if (!selectedSide && currentWords.length > 0)
       setSelectedWord(currentWords[currentWords.length-1]);
   }
 
@@ -183,7 +183,7 @@ function App() {
   let yourWordList = Globals.yourWordList;
   let newWordList = Globals.newWordList;
   let selectedClues = [] as string[];
-  if (Globals.clues && Globals.clues.has(selectedWord.word)) {
+  if (Globals.clues && selectedWord && Globals.clues.has(selectedWord.word)) { 
     selectedClues = Globals.clues.get(selectedWord.word)!.slice(0, 20);
   } 
 

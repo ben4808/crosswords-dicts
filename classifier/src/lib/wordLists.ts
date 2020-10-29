@@ -23,20 +23,19 @@ function parseWordListEntries(entries: string[]): Word[] {
     let ret = [] as Word[];
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
-        if (tokens.length === 1) {
-            ret.push({
-                word: tokens[0],
-                qualityClass: QualityClass.Unclassified,
-                categories: new Map<string, boolean>(),
-            });
+
+        let categories = new Map<string, boolean>();
+        if (tokens.length > 2) {
+            for (let i = 2; i < tokens.length; i++) {
+                categories.set(tokens[i], true);
+            }
         }
-        else {
-            ret.push({
-                word: tokens[0],
-                qualityClass: wordScoreToQualityClass(tokens[1]),
-                categories: new Map<string, boolean>(),
-            })
-        }
+
+        ret.push({
+            word: tokens[0],
+            qualityClass: tokens.length > 1 ? wordScoreToQualityClass(tokens[1]) : QualityClass.Unclassified,
+            categories: categories,
+        });
     });
 
     return ret;
@@ -63,7 +62,7 @@ export async function loadMainWordList(): Promise<Word[]> {
 }
 
 function parseNormalDict(lines: string[]): string[] {
-    return lines;
+    return lines.filter(line => line.match(/^[\w;]+/))
 }
 
 export async function loadGinsbergDatabaseCsv(): Promise<Word[]> {
@@ -80,7 +79,7 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
         tokens.shift();
         let clue = tokens.join(",");
         clue = clue.replace(/^"(.*)"$/, "$1").replaceAll("\"\"", "\"");
-        if (word.length !== 3) return;
+        if (word.length !== 4) return;
 
         map.set(word, map.has(word) ? map.get(word)! + 1: 1);
         if (clues.has(word)) clues.get(word)?.push(clue);
