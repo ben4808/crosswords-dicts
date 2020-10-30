@@ -1,8 +1,9 @@
 import { QualityClass } from "../models/QualityClass";
 import { Word } from "../models/Word";
 import Globals from '../lib/windowService';
+import { deepClone } from "../App";
 
-export async function loadWordList(url: string, parserFunc: (lines: string[]) => string[]): Promise<Word[]> {
+export async function loadWordList(url: string, parserFunc: (lines: string[]) => string[], isMain: boolean) {
     var startTime = new Date().getTime();
     var response = await fetch(url);
     var t2 = new Date().getTime();
@@ -13,14 +14,39 @@ export async function loadWordList(url: string, parserFunc: (lines: string[]) =>
     var entries = parserFunc(lines);
     var t4 = new Date().getTime();
     console.log((t4 - startTime) + " Parsed into entries");
-    var words = parseWordListEntries(entries);
+    var words = parseWordListEntries(entries, isMain);
     var t5 = new Date().getTime();
     console.log((t5 - startTime) + " Finished indexing");
     return words;
 }
 
-function parseWordListEntries(entries: string[]): Word[] {
-    let ret = [] as Word[];
+export function mergeWordLists() {
+    Globals.newWordListKeys.forEach(key => {
+        let newWord = Globals.newWordList!.get(key)!;
+        let normalized = key;
+        if (Globals.mergedWordList!.has(normalized)) {
+            let existingWord = Globals.mergedWordList!.get(normalized)!;
+            newWord.qualityClass = existingWord.qualityClass;
+            newWord.categories = deepClone(existingWord.categories);
+        }
+        else {
+            let word = deepClone(newWord) as Word;
+            word.word = normalized;
+            Globals.mergedWordList!.set(normalized, word);
+            Globals.mergedWordListKeys.push(normalized);
+        }
+    });
+
+    Globals.mergedWordListKeys.sort();
+}
+
+function normalizeWord(word: string): string {
+    return word.replaceAll(/[^\w]/g, "").toUpperCase();
+}
+
+function parseWordListEntries(entries: string[], isMain: boolean) {
+    let map = new Map<string, Word>();
+    let keys = [] as string[];
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
@@ -31,14 +57,24 @@ function parseWordListEntries(entries: string[]): Word[] {
             }
         }
 
-        ret.push({
+        let word = {
             word: tokens[0],
             qualityClass: tokens.length > 1 ? wordScoreToQualityClass(tokens[1]) : QualityClass.Unclassified,
             categories: categories,
-        });
+        } as Word;
+
+        map.set(normalizeWord(word.word), word);
+        keys.push(word.word);
     });
 
-    return ret;
+    if (isMain) {
+        Globals.mergedWordList = map;
+        Globals.mergedWordListKeys = keys;
+    }
+    else {
+        Globals.newWordList = map;
+        Globals.newWordListKeys = keys;
+    }
 }
 
 export function wordScoreToQualityClass(wordScore: string): QualityClass {
@@ -57,16 +93,18 @@ export function qualityClassToWordScore(qualityClass: QualityClass): string {
     return "";
 }
 
-export async function loadMainWordList(): Promise<Word[]> {
-    return await loadWordList("http://localhost/classifier/main.txt", parseNormalDict);
+export async function loadMainWordList() {
+    await loadWordList("http://localhost/classifier/4s_main.txt", parseNormalDict, true);
 }
 
 function parseNormalDict(lines: string[]): string[] {
-    return lines.filter(line => line.match(/^[\w;]+/))
+    let ret = lines.filter(line => line.match(/^[\w;]+/))
+    lines.sort();
+    return ret;
 }
 
-export async function loadGinsbergDatabaseCsv(): Promise<Word[]> {
-    return await loadWordList("http://localhost/classifier/clues.txt", parseGinsbergDatabaseCsv);
+export async function loadGinsbergDatabaseCsv() {
+    await loadWordList("http://localhost/classifier/clues.txt", parseGinsbergDatabaseCsv, false);
 }
 
 function parseGinsbergDatabaseCsv(lines: string[]): string[] {

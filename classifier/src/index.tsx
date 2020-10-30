@@ -2,21 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
-import { loadGinsbergDatabaseCsv, loadMainWordList } from './lib/wordLists';
+import { loadGinsbergDatabaseCsv, loadMainWordList, mergeWordLists } from './lib/wordLists';
 import Globals from './lib/windowService';
 
-Globals.categories = ["Adult", "Theme"];
+Globals.categories = ["Adult", "Theme", "Uncommon"];
 
-loadMainWordList().then(mwl => {
-  Globals.yourWordList = mwl;
-
-  let yourWordMap = new Map<string, boolean>();
-  mwl.forEach(word => {
-    yourWordMap.set(word.word, true);
-  });
-
-  loadGinsbergDatabaseCsv().then(nwl => {
-    Globals.newWordList = nwl.filter(word => !yourWordMap.has(word.word));
+loadMainWordList().then(() => {
+  loadGinsbergDatabaseCsv().then(() => {
+    mergeWordLists();
     Globals.listsLoaded!();
   });
 });

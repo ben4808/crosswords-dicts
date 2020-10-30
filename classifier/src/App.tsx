@@ -6,10 +6,11 @@ import { QualityClass } from './models/QualityClass';
 import { Word } from './models/Word';
 
 function App() {
-  const [shownYourWords, setShownYourWords] = useState([] as Word[]);
-  const [shownNewWords, setShownNewWords] = useState([] as Word[]);
-  const [selectedWord, setSelectedWord] = useState(newWord());
+  const [mergedKeys, setMergedKeys] = useState([] as string[]);
+  const [newKeys, setNewKeys] = useState([] as string[]);
+  const [selectedKey, setSelectedKey] = useState("");
   const [selectedSide, setSelectedSide] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -18,13 +19,10 @@ function App() {
   }, []);
 
   function listsLoaded() {
-    let yourWordSet = getNewSetOfWords(Globals.yourWordList!);
-    let newWordSet = getNewSetOfWords(Globals.newWordList!);
-
     setLoaded(true);
-    setShownYourWords(yourWordSet);
-    setShownNewWords(newWordSet);
-    setSelectedWord(newWordSet[newWordSet.length-1]);
+    setMergedKeys(Globals.mergedWordListKeys!);
+    setNewKeys(Globals.newWordListKeys!);
+    setSelectedKey(Globals.newWordListKeys[0]);
     document.getElementById("container")?.focus();
   }
 
@@ -35,111 +33,94 @@ function App() {
         if (!target) return;
     }
 
-    let currentWords = deepClone(shownNewWords) as Word[];
-    let yourWords = deepClone(shownYourWords) as Word[];
-
-    let yourWord = yourWords.find(x => x.word === target.innerText || target.innerHTML.startsWith(x.word + "<"));
-    if (yourWord) {
-      setSelectedWord(yourWord);
-      setSelectedSide(true);
-    }
-    else {
-      setSelectedWord(currentWords[currentWords.length-1]);
-      setSelectedSide(false);
-    }
+    let side: boolean = target.className.includes("word-merged");
+    let newKey = target.dataset["key"];
+    let index = side ? mergedKeys.indexOf(newKey) : newKeys.indexOf(newKey);
+    setSelectedKey(newKey);
+    setSelectedSide(side);
+    setSelectedIndex(index);
   }
 
   function handleKeyDown(event: any) {
     let key: string = event.key.toUpperCase();
-    let yourWordList = Globals.yourWordList!;
-    let newWordList = Globals.newWordList!;
-
-    let currentWords = deepClone(shownNewWords) as Word[];
-    let yourWords = deepClone(shownYourWords) as Word[];
 
     if (key === "W") {
-      doProcessKeyDown(yourWordList, newWordList, yourWords, currentWords, word => {
+      doProcessKeyDown(word => {
         word.qualityClass = QualityClass.Lively;
         word.categories = new Map<string, boolean>();
       });
     }
     if (key === "A") {
-      doProcessKeyDown(yourWordList, newWordList, yourWords, currentWords, word => {
+      doProcessKeyDown(word => {
         word.qualityClass = QualityClass.Iffy;
         word.categories = new Map<string, boolean>();
       });
     }
     if (key === "S") {
-      doProcessKeyDown(yourWordList, newWordList, yourWords, currentWords, word => {
+      doProcessKeyDown(word => {
         word.qualityClass = QualityClass.Crosswordese;
         word.categories = new Map<string, boolean>();
       });
     }
     if (key === "D") {
-      doProcessKeyDown(yourWordList, newWordList, yourWords, currentWords, word => {
+      doProcessKeyDown(word => {
         word.qualityClass = QualityClass.Normal;
         word.categories = new Map<string, boolean>();
       });
     }
     if (key === "F") {
-      doProcessKeyDown(yourWordList, newWordList, yourWords, currentWords, word => {
+      doProcessKeyDown(word => {
         word.qualityClass = QualityClass.Normal;
         word.categories = new Map<string, boolean>();
         word.categories.set("Adult", true);
       });
     }
     if (key === "E") {
-      doProcessKeyDown(yourWordList, newWordList, yourWords, currentWords, word => {
+      doProcessKeyDown(word => {
         word.qualityClass = QualityClass.Normal;
         word.categories = new Map<string, boolean>();
         word.categories.set("Theme", true);
       });
     }
-
-    if (currentWords.length === 0) {
-      currentWords = getNewSetOfWords(newWordList);
+    if (key === "C") {
+      doProcessKeyDown(word => {
+        word.qualityClass = QualityClass.Normal;
+        word.categories = new Map<string, boolean>();
+        word.categories.set("Uncommon", true);
+      });
     }
-    if (yourWords.length > 25) {
-      yourWords.shift();
-    }
 
-    setShownNewWords(currentWords);
-    setShownYourWords(yourWords);
-    if (!selectedSide && currentWords.length > 0)
-      setSelectedWord(currentWords[currentWords.length-1]);
+    let newIndex = selectedIndex + 1;
+    setSelectedIndex(newIndex);
+    if (selectedSide) setSelectedKey(mergedKeys[newIndex]);
+    else setSelectedKey(newKeys[newIndex]);
   }
 
-  function doProcessKeyDown(ywl: Word[], nwl: Word[], yw: Word[], nw: Word[], f: (word: Word) => void) {
-    let word: Word;
-    let globalWord: Word = newWord();
+  function doProcessKeyDown(f: (word: Word) => void) {
+    let mergedWord = Globals.mergedWordList!.get(selectedKey);
+    let newWord = Globals.newWordList!.get(selectedKey);
 
-    if (selectedSide) {
-      word = yw.find(x => x.word === selectedWord.word)!;
-      globalWord = ywl.find(x => x.word === selectedWord.word)!;
+    if (mergedWord) {
+      f(mergedWord);
     }
-    else {
-      word = nwl.pop()!;
-      nw.pop();
-    }
-
-    f(word);
-    if (selectedSide) f(globalWord);
-
-    if (!selectedSide) {
-      ywl.push(word);
-      yw.push(word);
+    if (newWord) {
+      f(newWord);
     }
 }
 
-  function getWordMarkup(word: Word, showCategories: boolean = false): JSX.Element {
+  function getWordMarkup(key: string, index: number, side: boolean): JSX.Element {
+    let word = side ? Globals.mergedWordList!.get(key)! : Globals.newWordList!.get(key)!;
+    let isSelected = selectedSide === side && selectedKey === key && index === selectedIndex;
+
     let categories = [] as string[];
     word.categories.forEach((_, cat) => {
       categories.push(cat);
     });
 
     return (
-      <div key={word.word} className={"word" + 
-        (word.word === selectedWord.word ? " word-selected" : "") +
+      <div key={word.word} data-key={word.word} className={"word" + 
+        (side ? " word-merged" : " word-new") +
+        (isSelected ? " word-selected" : "") +
         (word.qualityClass === QualityClass.Unclassified ? " word-unclassified" :
         word.qualityClass === QualityClass.Lively ? " word-lively" :
         word.qualityClass === QualityClass.Normal ? " word-normal" :
@@ -147,7 +128,7 @@ function App() {
         word.qualityClass === QualityClass.Iffy ? " word-iffy" : "")
       } onClick={handleWordClick}>
         {word.word}
-        {showCategories && categories.map(category =>
+        {categories.map(category =>
           <div key={`${word.word}_${category}`} className="category">{category}</div>
         )}
       </div>
@@ -161,71 +142,58 @@ function App() {
   }
 
   function save() {
-    Globals.yourWordList!.sort((a, b) => a.word > b.word ? 1 : -1);
-
     let lines = [] as string[];
     lines.push("// No category");
-    Globals.yourWordList!.filter(word => word.categories.size === 0).forEach(word => {
+
+    Globals.mergedWordListKeys.forEach(key => {
+      let word = Globals.mergedWordList!.get(key)!;
+      if (word.categories.size > 0) return;
       lines.push(`${word.word};${qualityClassToWordScore(word.qualityClass)}`);
     });
 
     Globals.categories!.forEach(cat => {
       lines.push("");
       lines.push("// " + cat);
-      Globals.yourWordList!.filter(word => word.categories.has(cat)).forEach(word => {
-        lines.push(`${word.word};${qualityClassToWordScore(word.qualityClass)};${cat}`);
+      Globals.mergedWordListKeys.forEach(key => {
+        let word = Globals.mergedWordList!.get(key)!;
+        if (!word.categories.has(cat)) return;
+        lines.push(`${word.word};${qualityClassToWordScore(word.qualityClass)}`);
       });
     });
     
     window.open()!.document.write(`<pre>${lines.join("\n")}</pre>`);
   }
 
-  let yourWordList = Globals.yourWordList;
-  let newWordList = Globals.newWordList;
   let selectedClues = [] as string[];
-  if (Globals.clues && selectedWord && Globals.clues.has(selectedWord.word)) { 
-    selectedClues = Globals.clues.get(selectedWord.word)!.slice(0, 20);
-  } 
-
-  let newWordsReversed = reverseArray(shownNewWords!);
-  let yourWordsReversed = reverseArray(shownYourWords!);
+  if (loaded) {
+    let selectedWord = selectedSide ? Globals.mergedWordList!.get(selectedKey)! : Globals.newWordList!.get(selectedKey)!;
+    if (Globals.clues && selectedIndex >= 0 && Globals.clues.has(selectedWord.word)) { 
+      selectedClues = Globals.clues.get(selectedWord.word)!.slice(0, 20);
+    } 
+  }
 
   return (
     <div id="container" className="container" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="mainDiv">
         <button id="save_btn" onClick={save}>Save</button>
-        <br></br><br></br>
+        <br /><br />
         {selectedClues.map(clue => getClueMarkup(clue))}
       </div>
       <div className="mainDiv">
-        <b>New Word List {loaded ? "(" + newWordList!.length + ")" : 0}</b>
+        <b>New Word List {loaded ? "(" + newKeys.length + ")" : ""}</b>
         <br />
-        {loaded ? newWordsReversed.map(word => getWordMarkup(word)) : "Loading..."}
+        {loaded ? newKeys.map((key, i) => getWordMarkup(key, i, false)) : "Loading..."}
       </div>
       <div className="mainDiv">
-        <b>Your Word List {loaded ? "(" + yourWordList!.length + ")" : 0}</b>
+        <b>Merged Word List {loaded ? "(" + mergedKeys.length + ")" : ""}</b>
         <br />
-        {loaded ? yourWordsReversed.map(word => getWordMarkup(word, true)) : "Loading..."}
+        {loaded ? mergedKeys.map((key, i) => getWordMarkup(key, i, true)) : "Loading..."}
       </div>
     </div>
   );
 }
 
 export default App;
-
-function newWord(): Word {
-  return {
-    word: "",
-    qualityClass: QualityClass.Unclassified,
-    categories: new Map<string, boolean>(),
-    isSelected: false,
-  } as Word;
-}
-
-function getNewSetOfWords(wordList: Word[]): Word[] {
-  let words = wordList.slice(wordList.length-25, wordList.length);
-  return words;
-}
 
 // https://stackoverflow.com/questions/38416020/deep-copy-in-es6-using-the-spread-syntax
 export function deepClone(obj: any): any {
@@ -254,12 +222,4 @@ export function deepClone(obj: any): any {
           return newObj;
       }, {})
   }
-}
-
-function reverseArray<T>(arr: T[]): T[] {
-  var newArray = [];
-  for (var i = arr.length - 1; i >= 0; i--) {
-    newArray.push(arr[i]);
-  }
-  return newArray;
 }
