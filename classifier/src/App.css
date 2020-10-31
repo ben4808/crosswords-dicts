@@ -6,6 +6,7 @@ html, body {
     width: 100%;
     text-align: center;
     outline: 0px solid transparent;
+    margin-top: 10px;
 }
 .container:focus {
     outline: 0px solid transparent;
@@ -17,6 +18,19 @@ html, body {
     text-align: left;
     vertical-align: top;
     margin: 0 20px;
+}
+
+.pageDiv {
+    display: inline-block;
+    padding: 0 5px;
+    font-size: 20px;
+    font-weight: bold;
+    height: 650px;
+    background-color: #ddd;
+    cursor: pointer;
+}
+.pageDiv:hover {
+    background-color: #bbb;
 }
 
 .word {
@@ -63,11 +77,42 @@ html, body {
     font-size: 11px;
 }
 
-#save_btn {
+.action_button {
     font-size: 16px;
     border: 2px darkblue solid;
     background-color: lightblue;
     padding: 5px 15px;
     border-radius: 5px;
     cursor: pointer;
+    margin-right: 10px;
+}
+
+.my_textbox {
+    font-size: 16px;
+    border: 1px darkgray solid;
+    border-radius: 5px;
+    font-family: Verdana, sans-serif;
+    display: inline-block;
+    margin-left: 200px;
+    padding: 5px;
+}
+
+.qc_filters {
+    display:inline-block;
+    margin-left: 20px;
+}
+.qc_filter {
+    margin-left: 20px;
+    display: inline-block;
+}
+.qc_filter input {
+    margin-right: 5px
+}
+
+.list_length {
+    font-family: Verdana, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 20px
 }

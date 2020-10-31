@@ -127,6 +127,6 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
     Globals.clues = clues;
 
     let arr = Array.from(map.keys());
-    arr.sort((a, b) => map.get(a)! - map.get(b)!);
+    arr.sort((a, b) => map.get(b)! - map.get(a)!);
     return arr;
 }

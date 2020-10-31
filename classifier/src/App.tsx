@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import './App.css';
 import Globals from './lib/windowService';
 import { qualityClassToWordScore } from './lib/wordLists';
 import { QualityClass } from './models/QualityClass';
 import { Word } from './models/Word';
+import { WordCompProps } from './models/WordCompProps';
 
 function App() {
   const [mergedKeys, setMergedKeys] = useState([] as string[]);
   const [newKeys, setNewKeys] = useState([] as string[]);
-  const [selectedKey, setSelectedKey] = useState("");
   const [selectedSide, setSelectedSide] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loaded, setLoaded] = useState(false);
@@ -22,7 +22,8 @@ function App() {
     setLoaded(true);
     setMergedKeys(Globals.mergedWordListKeys!);
     setNewKeys(Globals.newWordListKeys!);
-    setSelectedKey(Globals.newWordListKeys[0]);
+    setSelectedIndex(0);
+    setSelectedSide(false);
     document.getElementById("container")?.focus();
   }
 
@@ -34,15 +35,14 @@ function App() {
     }
 
     let side: boolean = target.className.includes("word-merged");
-    let newKey = target.dataset["key"];
-    let index = side ? mergedKeys.indexOf(newKey) : newKeys.indexOf(newKey);
-    setSelectedKey(newKey);
+    let newIndex = +target.dataset["index"];
     setSelectedSide(side);
-    setSelectedIndex(index);
+    setSelectedIndex(newIndex);
   }
 
   function handleKeyDown(event: any) {
     let key: string = event.key.toUpperCase();
+    if (selectedIndex < 0) return;
 
     if (key === "W") {
       doProcessKeyDown(word => {
@@ -91,14 +91,16 @@ function App() {
     }
 
     let newIndex = selectedIndex + 1;
+    if ((selectedSide && newIndex >= mergedKeys.length) || (!selectedSide && newIndex >= newKeys.length))
+      return;
+
     setSelectedIndex(newIndex);
-    if (selectedSide) setSelectedKey(mergedKeys[newIndex]);
-    else setSelectedKey(newKeys[newIndex]);
   }
 
   function doProcessKeyDown(f: (word: Word) => void) {
-    let mergedWord = Globals.mergedWordList!.get(selectedKey);
-    let newWord = Globals.newWordList!.get(selectedKey);
+    let key = selectedSide ? Globals.mergedWordListKeys[selectedIndex] : Globals.newWordListKeys[selectedIndex];
+    let mergedWord = Globals.mergedWordList!.get(key);
+    let newWord = Globals.newWordList!.get(key);
 
     if (mergedWord) {
       f(mergedWord);
@@ -106,33 +108,6 @@ function App() {
     if (newWord) {
       f(newWord);
     }
-}
-
-  function getWordMarkup(key: string, index: number, side: boolean): JSX.Element {
-    let word = side ? Globals.mergedWordList!.get(key)! : Globals.newWordList!.get(key)!;
-    let isSelected = selectedSide === side && selectedKey === key && index === selectedIndex;
-
-    let categories = [] as string[];
-    word.categories.forEach((_, cat) => {
-      categories.push(cat);
-    });
-
-    return (
-      <div key={word.word} data-key={word.word} className={"word" + 
-        (side ? " word-merged" : " word-new") +
-        (isSelected ? " word-selected" : "") +
-        (word.qualityClass === QualityClass.Unclassified ? " word-unclassified" :
-        word.qualityClass === QualityClass.Lively ? " word-lively" :
-        word.qualityClass === QualityClass.Normal ? " word-normal" :
-        word.qualityClass === QualityClass.Crosswordese ? " word-crosswordese" :
-        word.qualityClass === QualityClass.Iffy ? " word-iffy" : "")
-      } onClick={handleWordClick}>
-        {word.word}
-        {categories.map(category =>
-          <div key={`${word.word}_${category}`} className="category">{category}</div>
-        )}
-      </div>
-    );
   }
 
   function getClueMarkup(clue: string): JSX.Element {
@@ -164,32 +139,80 @@ function App() {
     window.open()!.document.write(`<pre>${lines.join("\n")}</pre>`);
   }
 
+  function makeAllIffy() {
+    if (!window.confirm("Are you sure?")) return;
+
+    alert("Iffy!");
+  }
+
+  function submit_word(event: any) {
+    if (event.keyCode === 13) {
+      // Cancel the default action, if needed
+      event.preventDefault();
+      // Trigger the button element with a click
+      //document.getElementById("myBtn").click();
+    }
+  }
+
+  function pageBack() {
+    alert("Back!");
+  }
+
+  function pageForward() {
+    alert("Forward!");
+  }
+
   let selectedClues = [] as string[];
   if (loaded) {
-    let selectedWord = selectedSide ? Globals.mergedWordList!.get(selectedKey)! : Globals.newWordList!.get(selectedKey)!;
-    if (Globals.clues && selectedIndex >= 0 && Globals.clues.has(selectedWord.word)) { 
+    let selectedKey = selectedSide ? Globals.mergedWordListKeys[selectedIndex] : Globals.newWordListKeys[selectedIndex];
+    let selectedWord = Globals.mergedWordList!.get(selectedKey)!;
+    if (selectedWord && Globals.clues && Globals.clues.has(selectedWord.word)) { 
       selectedClues = Globals.clues.get(selectedWord.word)!.slice(0, 20);
     } 
   }
 
+  let qualityClasses = [] as string[];
+  for(let c in QualityClass) {
+    if (isNaN(Number(c))) {
+      qualityClasses.push(c);
+    }
+  }
+
   return (
-    <div id="container" className="container" onKeyDown={handleKeyDown} tabIndex={0}>
-      <div className="mainDiv">
-        <button id="save_btn" onClick={save}>Save</button>
-        <br /><br />
-        {selectedClues.map(clue => getClueMarkup(clue))}
+    <>
+      <div id="topbar">
+        <div className="list_length">Showing 1-100 of 14386</div>
+        <input className="my_textbox" type="text" onKeyUp={submit_word}></input>
+        <div className="qc_filters">
+          {qualityClasses.map(qc => (
+            <div key={qc} className="qc_filter">
+              <input type="checkbox" id={"checkbox_" + qc} defaultChecked={true}></input>
+              <label htmlFor={"checkbox_" + qc}>{qc}</label>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mainDiv">
-        <b>New Word List {loaded ? "(" + newKeys.length + ")" : ""}</b>
-        <br />
-        {loaded ? newKeys.map((key, i) => getWordMarkup(key, i, false)) : "Loading..."}
+      <div id="container" className="container" onKeyDown={handleKeyDown} onClick={handleWordClick} tabIndex={0}>
+        <div className="mainDiv">
+          <button className="action_button" id="save_btn" onClick={save}>Save</button>
+          <button className="action_button" id="all_iffy_btn" onClick={makeAllIffy}>Make All Iffy</button>
+          <br /><br />
+          {selectedClues.map(clue => getClueMarkup(clue))}
+        </div>
+        <div className="pageDiv" onClick={pageBack}>&lt;</div>
+        <div className="mainDiv">
+          <b>New Word List {loaded ? "(" + newKeys.length + ")" : ""}</b>
+          <br />
+          {loaded ? newKeys.map((key, i) => <WordComponent key={key} side={false} index={i} isSelected={selectedSide === false && i === selectedIndex} />) : "Loading..."}
+        </div>
+        <div className="mainDiv">
+          <b>Merged Word List {loaded ? "(" + mergedKeys.length + ")" : ""}</b>
+          <br />
+          {loaded ? mergedKeys.map((key, i) => <WordComponent key={key} side={true} index={i} isSelected={selectedSide === true && i === selectedIndex} />) : "Loading..."}
+        </div>
+        <div className="pageDiv" onClick={pageForward}>&gt;</div>
       </div>
-      <div className="mainDiv">
-        <b>Merged Word List {loaded ? "(" + mergedKeys.length + ")" : ""}</b>
-        <br />
-        {loaded ? mergedKeys.map((key, i) => getWordMarkup(key, i, true)) : "Loading..."}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -223,3 +246,30 @@ export function deepClone(obj: any): any {
       }, {})
   }
 }
+
+const WordComponent = memo<WordCompProps>(function WordComponent(props) {
+  let key = props.side ? Globals.mergedWordListKeys[props.index] : Globals.newWordListKeys[props.index];
+  let word = Globals.mergedWordList!.get(key)!;
+
+  let categories = [] as string[];
+  word.categories.forEach((_, cat) => {
+    categories.push(cat);
+  });
+
+  return (
+    <div key={word.word} data-index={props.index} className={"word" + 
+      (props.side ? " word-merged" : " word-new") +
+      (props.isSelected ? " word-selected" : "") +
+      (word.qualityClass === QualityClass.Unclassified ? " word-unclassified" :
+      word.qualityClass === QualityClass.Lively ? " word-lively" :
+      word.qualityClass === QualityClass.Normal ? " word-normal" :
+      word.qualityClass === QualityClass.Crosswordese ? " word-crosswordese" :
+      word.qualityClass === QualityClass.Iffy ? " word-iffy" : "")
+    }>
+      {word.word}
+      {categories.map(category =>
+        <div key={`${word.word}_${category}`} className="category">{category}</div>
+      )}
+    </div>
+  );
+});
