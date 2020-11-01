@@ -1,7 +1,6 @@
 import { QualityClass } from "../models/QualityClass";
 import { Word } from "../models/Word";
 import Globals from '../lib/windowService';
-import { deepClone } from "../App";
 
 export async function loadWordList(url: string, parserFunc: (lines: string[]) => string[], isMain: boolean) {
     var startTime = new Date().getTime();
@@ -20,27 +19,26 @@ export async function loadWordList(url: string, parserFunc: (lines: string[]) =>
     return words;
 }
 
-export function mergeWordLists() {
-    Globals.newWordListKeys.forEach(key => {
-        let newWord = Globals.newWordList!.get(key)!;
-        let normalized = key;
-        if (Globals.mergedWordList!.has(normalized)) {
-            let existingWord = Globals.mergedWordList!.get(normalized)!;
-            newWord.qualityClass = existingWord.qualityClass;
-            newWord.categories = deepClone(existingWord.categories);
+export function mergeWordLists(newWordList: Map<string, Word>) {
+    let originalWordList = Globals.mergedWordList!;
+
+    newWordList.forEach((word, key) => {
+        if (originalWordList.has(key)) {
+            let origWord = originalWordList.get(key)!;
+            word.qualityClass = origWord.qualityClass;
+            word.categories = origWord.categories;
+            origWord.word = word.word;
         }
         else {
-            let word = deepClone(newWord) as Word;
-            word.word = normalized;
-            Globals.mergedWordList!.set(normalized, word);
-            Globals.mergedWordListKeys.push(normalized);
+            word.qualityClass = QualityClass.Unclassified;
+            word.categories = new Map<string, boolean>();
+            originalWordList.set(key, word);
+            Globals.mergedWordListKeys!.push(key);
         }
     });
-
-    Globals.mergedWordListKeys.sort();
 }
 
-function normalizeWord(word: string): string {
+export function normalizeWord(word: string): string {
     return word.replaceAll(/[^\w]/g, "").toUpperCase();
 }
 
@@ -49,6 +47,8 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
     let keys = [] as string[];
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
+
+        if (!isMain && tokens[0].length !== 5) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -63,8 +63,9 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
             categories: categories,
         } as Word;
 
-        map.set(normalizeWord(word.word), word);
-        keys.push(word.word);
+        let normalized = normalizeWord(word.word);
+        map.set(normalized, word);
+        keys.push(normalized);
     });
 
     if (isMain) {
@@ -72,8 +73,7 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
         Globals.mergedWordListKeys = keys;
     }
     else {
-        Globals.newWordList = map;
-        Globals.newWordListKeys = keys;
+        mergeWordLists(map);
     }
 }
 
@@ -94,11 +94,19 @@ export function qualityClassToWordScore(qualityClass: QualityClass): string {
 }
 
 export async function loadMainWordList() {
-    await loadWordList("http://localhost/classifier/4s_main.txt", parseNormalDict, true);
+    await loadWordList("http://localhost/classifier/main.txt", parseNormalDict, true);
+}
+
+export async function loadPhilWordList() {
+    await loadWordList("http://localhost/classifier/phil_wordlist.txt", parseNormalDict, false);
+}
+
+export async function loadWebsterWordList() {
+    await loadWordList("http://localhost/classifier/webster_wordlist.txt", parseNormalDict, false);
 }
 
 function parseNormalDict(lines: string[]): string[] {
-    let ret = lines.filter(line => line.match(/^[\w;]+/))
+    let ret = lines.filter(line => line.match(/^[a-zA-Z;]+/));
     lines.sort();
     return ret;
 }
@@ -117,7 +125,7 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
         tokens.shift();
         let clue = tokens.join(",");
         clue = clue.replace(/^"(.*)"$/, "$1").replaceAll("\"\"", "\"");
-        if (word.length !== 4) return;
+        if (word.length !== 5) return;
 
         map.set(word, map.has(word) ? map.get(word)! + 1: 1);
         if (clues.has(word)) clues.get(word)?.push(clue);

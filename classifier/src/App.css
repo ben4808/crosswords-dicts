@@ -14,10 +14,18 @@ html, body {
 
 .mainDiv {
     display: inline-block;
-    width: 400px;
+    width: 300px;
     text-align: left;
     vertical-align: top;
     margin: 0 20px;
+}
+
+.wordListDiv {
+    display: inline-block;
+    width: 225px;
+    text-align: left;
+    vertical-align: top;
+    margin-left: 20px;
 }
 
 .pageDiv {
