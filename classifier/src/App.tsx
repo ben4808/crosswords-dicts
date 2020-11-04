@@ -123,7 +123,7 @@ function App() {
       if (word.categories.size > 0) return;
       if (word.qualityClass === QualityClass.Unclassified) return;
       lines.push(`${key};${qualityClassToWordScore(word.qualityClass)}`);
-    });
+    }); 
 
     Globals.categories!.forEach(cat => {
       lines.push("");
@@ -132,7 +132,7 @@ function App() {
         let word = Globals.mergedWordList!.get(key)!;
         if (!word.categories.has(cat)) return;
         if (word.qualityClass === QualityClass.Unclassified) return;
-        lines.push(`${key};${qualityClassToWordScore(word.qualityClass)}`);
+        lines.push(`${key};${qualityClassToWordScore(word.qualityClass)};${cat}`);
       });
     });
     
