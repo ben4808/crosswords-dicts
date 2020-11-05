@@ -48,7 +48,7 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
-        if (!isMain && tokens[0].length !== 4) return;
+        if (!isMain && tokens[0].length !== 3) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -94,7 +94,7 @@ export function qualityClassToWordScore(qualityClass: QualityClass): string {
 }
 
 export async function loadMainWordList() {
-    await loadWordList("http://localhost/classifier/4s_main.txt", parseNormalDict, true);
+    await loadWordList("http://localhost/classifier/3ltr_main.txt", parseNormalDict, true);
 }
 
 export async function loadPhilWordList() {
@@ -105,14 +105,18 @@ export async function loadWebsterWordList() {
     await loadWordList("http://localhost/classifier/webster_wordlist.txt", parseNormalDict, false);
 }
 
-function parseNormalDict(lines: string[]): string[] {
-    let ret = lines.filter(line => line.match(/^[a-zA-Z;]+/));
-    lines.sort();
-    return ret;
+export async function loadBrodaWordList() {
+    await loadWordList("http://localhost/peter-broda-wordlist__scored.txt", parsePeterBrodaWordlist, false);
 }
 
 export async function loadGinsbergDatabaseCsv() {
     await loadWordList("http://localhost/classifier/clues.txt", parseGinsbergDatabaseCsv, false);
+}
+
+function parseNormalDict(lines: string[]): string[] {
+    let ret = lines.filter(line => line.match(/^[a-zA-Z;]+/));
+    lines.sort();
+    return ret;
 }
 
 function parseGinsbergDatabaseCsv(lines: string[]): string[] {
@@ -125,7 +129,7 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
         tokens.shift();
         let clue = tokens.join(",");
         clue = clue.replace(/^"(.*)"$/, "$1").replaceAll("\"\"", "\"");
-        if (word.length !== 4) return;
+        if (word.length !== 3) return;
 
         map.set(word, map.has(word) ? map.get(word)! + 1: 1);
         if (clues.has(word)) clues.get(word)?.push(clue);
@@ -137,4 +141,20 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
     let arr = Array.from(map.keys());
     arr.sort((a, b) => map.get(b)! - map.get(a)!);
     return arr;
+}
+
+export function parsePeterBrodaWordlist(lines: string[]): string[] {
+    let words = [] as string[];
+
+    lines.forEach(line => {
+        let tokens = line.trim().split(";");
+        if (tokens.length !== 2) return;
+        let word = tokens[0];
+        if (word.length === 3 && word.match(/^[A-Z]+$/)) {
+                    words.push(tokens[0]);
+                }
+    });
+
+    words.sort();
+    return words;
 }

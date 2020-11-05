@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
   // eslint-disable-next-line
-import { loadGinsbergDatabaseCsv, loadMainWordList, loadPhilWordList, loadWebsterWordList } from './lib/wordLists';
+import { loadBrodaWordList, loadGinsbergDatabaseCsv, loadMainWordList, loadPhilWordList, loadWebsterWordList, parsePeterBrodaWordlist } from './lib/wordLists';
 import Globals from './lib/windowService';
 
 Globals.categories = ["Adult", "Theme", "Uncommon"];
@@ -22,6 +22,12 @@ loadMainWordList().then(() => {
 
 // loadMainWordList().then(() => {
 //   loadWebsterWordList().then(() => {
+//     Globals.listsLoaded!();
+//   });
+// });
+
+// loadMainWordList().then(() => {
+//   loadBrodaWordList().then(() => {
 //     Globals.listsLoaded!();
 //   });
 // });
