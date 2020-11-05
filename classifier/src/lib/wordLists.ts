@@ -48,7 +48,7 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
-        if (!isMain && tokens[0].length !== 5) return;
+        if (!isMain && tokens[0].length !== 4) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -94,7 +94,7 @@ export function qualityClassToWordScore(qualityClass: QualityClass): string {
 }
 
 export async function loadMainWordList() {
-    await loadWordList("http://localhost/classifier/main.txt", parseNormalDict, true);
+    await loadWordList("http://localhost/classifier/4s_main.txt", parseNormalDict, true);
 }
 
 export async function loadPhilWordList() {
@@ -125,7 +125,7 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
         tokens.shift();
         let clue = tokens.join(",");
         clue = clue.replace(/^"(.*)"$/, "$1").replaceAll("\"\"", "\"");
-        if (word.length !== 5) return;
+        if (word.length !== 4) return;
 
         map.set(word, map.has(word) ? map.get(word)! + 1: 1);
         if (clues.has(word)) clues.get(word)?.push(clue);
