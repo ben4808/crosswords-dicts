@@ -48,7 +48,7 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
-        if (!isMain && tokens[0].length !== 3) return;
+        if (!isMain && tokens[0].length !== 6) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -94,7 +94,7 @@ export function qualityClassToWordScore(qualityClass: QualityClass): string {
 }
 
 export async function loadMainWordList() {
-    await loadWordList("http://localhost/classifier/3ltr_main.txt", parseNormalDict, true);
+    await loadWordList("http://localhost/classifier/main.txt", parseNormalDict, true);
 }
 
 export async function loadPhilWordList() {
@@ -129,7 +129,7 @@ function parseGinsbergDatabaseCsv(lines: string[]): string[] {
         tokens.shift();
         let clue = tokens.join(",");
         clue = clue.replace(/^"(.*)"$/, "$1").replaceAll("\"\"", "\"");
-        if (word.length !== 3) return;
+        if (word.length !== 6) return;
 
         map.set(word, map.has(word) ? map.get(word)! + 1: 1);
         if (clues.has(word)) clues.get(word)?.push(clue);
@@ -150,7 +150,7 @@ export function parsePeterBrodaWordlist(lines: string[]): string[] {
         let tokens = line.trim().split(";");
         if (tokens.length !== 2) return;
         let word = tokens[0];
-        if (word.length === 3 && word.match(/^[A-Z]+$/)) {
+        if (word.length === 6 && word.match(/^[A-Z]+$/)) {
                     words.push(tokens[0]);
                 }
     });
