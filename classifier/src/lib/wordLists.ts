@@ -19,7 +19,7 @@ export async function loadWordList(url: string, parserFunc: (lines: string[]) =>
     return words;
 }
 
-export function mergeWordLists(newWordList: Map<string, Word>) {
+export function mergeWordLists(newWordList: Map<string, Word>, isCombiningCall = false) {
     let originalWordList = Globals.mergedWordList!;
 
     newWordList.forEach((word, key) => {
@@ -30,8 +30,8 @@ export function mergeWordLists(newWordList: Map<string, Word>) {
             origWord.word = word.word;
         }
         else {
-            word.qualityClass = QualityClass.Unclassified;
-            word.categories = new Map<string, boolean>();
+            word.qualityClass = !isCombiningCall ? QualityClass.Unclassified : word.qualityClass;
+            word.categories = !isCombiningCall ? new Map<string, boolean>() : word.categories;
             originalWordList.set(key, word);
             Globals.mergedWordListKeys!.push(key);
         }
@@ -42,13 +42,13 @@ export function normalizeWord(word: string): string {
     return word.replaceAll(/[^\w]/g, "").toUpperCase();
 }
 
-function parseWordListEntries(entries: string[], isMain: boolean) {
+function parseWordListEntries(entries: string[], isMain: boolean, isCombiningCall = false) {
     let map = new Map<string, Word>();
     let keys = [] as string[];
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
-        if (!isMain && tokens[0].length !== 6) return;
+        if (!isCombiningCall && !isMain && tokens[0].length !== 6) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -63,6 +63,11 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
             categories: categories,
         } as Word;
 
+        if (isCombiningCall && (word.qualityClass === QualityClass.Iffy || word.qualityClass === QualityClass.Unclassified
+            || word.categories.has("Adult"))){
+            return;
+        }
+
         let normalized = normalizeWord(word.word);
         map.set(normalized, word);
         keys.push(normalized);
@@ -73,7 +78,7 @@ function parseWordListEntries(entries: string[], isMain: boolean) {
         Globals.mergedWordListKeys = keys;
     }
     else {
-        mergeWordLists(map);
+        mergeWordLists(map, isCombiningCall);
     }
 }
 
@@ -111,6 +116,42 @@ export async function loadBrodaWordList() {
 
 export async function loadGinsbergDatabaseCsv() {
     await loadWordList("http://localhost/classifier/clues.txt", parseGinsbergDatabaseCsv, false);
+}
+
+export async function loadMainPlusBroda() {
+    Globals.mergedWordList = new Map<string, Word>();    
+    Globals.mergedWordListKeys = [];
+
+    let lists = ["2s_main.txt", "3ltr_main.txt", "4s_main.txt", "5s_main.txt"];
+    for (let file of lists) {
+        let response = await fetch("http://localhost/classifier/" + file);
+        const lines = (await response.text()).split('\n');
+        let entries = lines.filter(line => line.match(/^[a-zA-Z;]+/));
+        parseWordListEntries(entries, file === lists[0], true);
+    }
+
+    let brodaResponse = await fetch("http://localhost/peter-broda-wordlist__scored.txt");
+    const lines = (await brodaResponse.text()).split('\n');
+    let entries = lines.filter(line => line.match(/^[a-zA-Z;]+/));
+    entries.forEach(line => {
+        let tokens = line.trim().split(";");
+        if (tokens.length !== 2) return;
+        let word = tokens[0];
+        let score = +tokens[1];
+        let qualityClass = score >= 50 ? QualityClass.Normal :
+                        score >= 40 ? QualityClass.Crosswordese : QualityClass.Iffy;
+        if (qualityClass !== QualityClass.Iffy && word.length > 5 && word.length <= 15 && word.match(/^[A-Z]+$/)) {
+            let word = {
+                word: tokens[0],
+                qualityClass: qualityClass,
+                categories: new Map<string, boolean>(),
+            } as Word;
+
+            let normalized = normalizeWord(word.word);
+            Globals.mergedWordList?.set(normalized, word);
+            Globals.mergedWordListKeys!.push(normalized);
+        }
+    });
 }
 
 function parseNormalDict(lines: string[]): string[] {
