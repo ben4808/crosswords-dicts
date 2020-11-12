@@ -3,20 +3,26 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
   // eslint-disable-next-line
-import { loadBrodaWordList, loadGinsbergDatabaseCsv, loadMainPlusBroda, loadMainWordList, loadPhilWordList, loadWebsterWordList, parsePeterBrodaWordlist } from './lib/wordLists';
+import { loadBrodaWordList, loadGinsbergDatabaseCsv, loadGoogleNewsVectors, loadMainPlusBroda, loadMainWordList, loadPhilWordList, loadWebsterWordList, parsePeterBrodaWordlist } from './lib/wordLists';
 import Globals from './lib/windowService';
 
 Globals.categories = ["Adult", "Theme", "Uncommon"];
 
-loadMainPlusBroda().then(() => {
-  Globals.listsLoaded!();
-});
+// loadMainPlusBroda().then(() => {
+//   Globals.listsLoaded!();
+// });
 
 // loadMainWordList().then(() => {
 //   loadGinsbergDatabaseCsv().then(() => {
 //     Globals.listsLoaded!();
 //   });
 // });
+
+loadMainWordList().then(() => {
+  loadGoogleNewsVectors().then(() => {
+    Globals.listsLoaded!();
+  });
+});
 
 // loadMainWordList().then(() => {
 //   loadPhilWordList().then(() => {

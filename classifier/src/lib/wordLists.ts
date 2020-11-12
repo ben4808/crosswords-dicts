@@ -48,7 +48,7 @@ function parseWordListEntries(entries: string[], isMain: boolean, isCombiningCal
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
-        if (!isCombiningCall && !isMain && tokens[0].length !== 6) return;
+        if (!isCombiningCall && !isMain && tokens[0].length !== 5) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -99,7 +99,7 @@ export function qualityClassToWordScore(qualityClass: QualityClass): string {
 }
 
 export async function loadMainWordList() {
-    await loadWordList("http://localhost/classifier/main.txt", parseNormalDict, true);
+    await loadWordList("http://localhost/classifier/5s_main.txt", parseNormalDict, true);
 }
 
 export async function loadPhilWordList() {
@@ -116,6 +116,10 @@ export async function loadBrodaWordList() {
 
 export async function loadGinsbergDatabaseCsv() {
     await loadWordList("http://localhost/classifier/clues.txt", parseGinsbergDatabaseCsv, false);
+}
+
+export async function loadGoogleNewsVectors() {
+    await loadWordList("http://localhost/Freebase-vectors.txt", parseGoogleVectors, false);
 }
 
 export async function loadMainPlusBroda() {
@@ -157,6 +161,19 @@ export async function loadMainPlusBroda() {
 function parseNormalDict(lines: string[]): string[] {
     let ret = lines.filter(line => line.match(/^[a-zA-Z;]+/));
     lines.sort();
+    return ret;
+}
+
+function parseGoogleVectors(lines: string[]): string[] {
+    let ret = [] as string[];
+    lines.forEach(line => {
+        let newLine = line.replaceAll(/[^a-zA-Z]/g, "");
+        newLine = newLine.substring(2);
+        if (newLine.length === 5) ret.push(newLine);
+    });
+    ret.sort(function (a, b) {
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
     return ret;
 }
 
