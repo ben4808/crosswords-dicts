@@ -48,7 +48,7 @@ function parseWordListEntries(entries: string[], isMain: boolean, isCombiningCal
     entries.forEach(entry => {
         let tokens = entry.trim().split(";");
 
-        if (!isCombiningCall && !isMain && tokens[0].length !== 5) return;
+        if (!isCombiningCall && !isMain && tokens[0].length === 0) return;
 
         let categories = new Map<string, boolean>();
         if (tokens.length > 2) {
@@ -122,19 +122,24 @@ export async function loadGoogleNewsVectors() {
     await loadWordList("http://localhost/Freebase-vectors.txt", parseGoogleVectors, false);
 }
 
+export async function loadEntriesFile() {
+    await loadWordList("http://localhost/classifier/Entries2.txt", parseNormalDict, false);
+}
+
 export async function loadMainPlusBroda() {
     Globals.mergedWordList = new Map<string, Word>();    
     Globals.mergedWordListKeys = [];
 
-    let lists = ["2s_main.txt", "3ltr_main.txt", "4s_main.txt", "5s_main.txt"];
-    for (let file of lists) {
-        let response = await fetch("http://localhost/classifier/" + file);
-        const lines = (await response.text()).split('\n');
-        let entries = lines.filter(line => line.match(/^[a-zA-Z;]+/));
-        parseWordListEntries(entries, file === lists[0], true);
-    }
+    // let lists = ["2s_main.txt", "3ltr_main.txt", "4s_main.txt", "5s_main.txt"];
+    // for (let file of lists) {
+    //     let response = await fetch("http://localhost/classifier/" + file);
+    //     const lines = (await response.text()).split('\n');
+    //     let entries = lines.filter(line => line.match(/^[a-zA-Z;]+/));
+    //     parseWordListEntries(entries, file === lists[0], true);
+    // }
 
-    let brodaResponse = await fetch("http://localhost/peter-broda-wordlist__scored.txt");
+    //let brodaResponse = await fetch("http://localhost/peter-broda-wordlist__scored.txt");
+    let brodaResponse = await fetch("http://localhost/classifier/mainBrodaEntries.txt");
     const lines = (await brodaResponse.text()).split('\n');
     let entries = lines.filter(line => line.match(/^[a-zA-Z;]+/));
     entries.forEach(line => {
@@ -144,7 +149,7 @@ export async function loadMainPlusBroda() {
         let score = +tokens[1];
         let qualityClass = score >= 50 ? QualityClass.Normal :
                         score >= 40 ? QualityClass.Crosswordese : QualityClass.Iffy;
-        if (qualityClass !== QualityClass.Iffy && word.length > 5 && word.length <= 15 && word.match(/^[A-Z]+$/)) {
+        if (qualityClass !== QualityClass.Iffy && word.length <= 15 && word.match(/^[A-Z]+$/)) {
             let word = {
                 word: tokens[0],
                 qualityClass: qualityClass,
@@ -159,7 +164,7 @@ export async function loadMainPlusBroda() {
 }
 
 function parseNormalDict(lines: string[]): string[] {
-    let ret = lines.filter(line => line.match(/^[a-zA-Z;]+/));
+    let ret = lines.filter(line => line.trim().match(/^[a-zA-Z;]+/));
     lines.sort();
     return ret;
 }
