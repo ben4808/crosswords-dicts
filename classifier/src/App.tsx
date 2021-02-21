@@ -31,7 +31,7 @@ function App() {
   }
 
   function getFilteredKeys(filters: QualityClass[]) {
-    let keys = Globals.mergedWordListKeys!;
+    let keys = mapKeys(Globals.mergedWordList!);
     return keys.filter(key => filters.includes(Globals.mergedWordList!.get(key)!.qualityClass));
   }
 
@@ -63,25 +63,25 @@ function App() {
       word.categories = new Map<string, boolean>();
     }
     if (key === "S") {
-      word.qualityClass = QualityClass.Crosswordese;
+      word.qualityClass = QualityClass.Okay;
       word.categories = new Map<string, boolean>();
     }
     if (key === "D") {
-      word.qualityClass = QualityClass.Normal;
+      word.qualityClass = QualityClass.Good;
       word.categories = new Map<string, boolean>();
     }
     if (key === "F") {
-      word.qualityClass = QualityClass.Normal;
+      word.qualityClass = QualityClass.Good;
       word.categories = new Map<string, boolean>();
       word.categories.set("Adult", true);
     }
     if (key === "E") {
-      word.qualityClass = QualityClass.Normal;
+      word.qualityClass = QualityClass.Good;
       word.categories = new Map<string, boolean>();
       word.categories.set("Theme", true);
     }
     if (key === "C") {
-      word.qualityClass = QualityClass.Normal;
+      word.qualityClass = QualityClass.Good;
       word.categories = new Map<string, boolean>();
       word.categories.set("Uncommon", true);
     }
@@ -115,7 +115,7 @@ function App() {
     let lines = [] as string[];
     lines.push("// No category");
 
-    let keys = deepClone(Globals.mergedWordListKeys) as string[];
+    let keys = mapKeys(Globals.mergedWordList!);
     keys.sort();
 
     keys.forEach(key => {
@@ -160,13 +160,13 @@ function App() {
     if (Globals.mergedWordList!.has(newKey)) return;
 
     let newWordObj = {
-      word: newWord,
+      rawEntry: newWord,
+      normalizedEntry: newKey,
       qualityClass: QualityClass.Unclassified,
       categories: new Map<string, boolean>(),
     } as Word;
 
     Globals.mergedWordList!.set(newKey, newWordObj);
-    Globals.mergedWordListKeys!.unshift(newKey);
 
     changeFilters();
   }
@@ -302,14 +302,22 @@ const WordComponent = function WordComponent(props: WordProps) {
       (props.isSelected ? " word-selected" : "") +
       (word.qualityClass === QualityClass.Unclassified ? " word-unclassified" :
       word.qualityClass === QualityClass.Lively ? " word-lively" :
-      word.qualityClass === QualityClass.Normal ? " word-normal" :
-      word.qualityClass === QualityClass.Crosswordese ? " word-crosswordese" :
+      word.qualityClass === QualityClass.Good ? " word-good" :
+      word.qualityClass === QualityClass.Okay ? " word-okay" :
       word.qualityClass === QualityClass.Iffy ? " word-iffy" : "")
     }>
-      {word.word}
+      {word.rawEntry}
       {categories.map(category =>
-        <div key={`${word.word}_${category}`} className="category">{category}</div>
+        <div key={`${word.normalizedEntry}_${category}`} className="category">{category}</div>
       )}
     </div>
   );
 };
+
+export function mapKeys<TKey, TVal>(map: Map<TKey, TVal>): TKey[] {
+  return Array.from(map.keys()) || [];
+}
+
+export function mapValues<TKey, TVal>(map: Map<TKey, TVal>): TVal[] {
+  return Array.from(map.values()) || [];
+}
