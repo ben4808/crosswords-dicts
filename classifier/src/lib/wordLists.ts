@@ -11,7 +11,7 @@ export async function loadWordLists (
     newListUrls: string[],
     newListParserFunc: (lines: string[], options: ParserOptions) => Word[],
     newListFilterFunc: (words: Word[]) => Word[],
-    newExludeIffy: boolean,
+    newExcludeIffy: boolean,
     length?: number) {
 
     Globals.mergedWordList = new Map<string, Word>();    
@@ -30,7 +30,7 @@ export async function loadWordLists (
     for (let file of newListUrls) {
         let response = await fetch("http://localhost/classifier/" + file);
         const lines = (await response.text()).split('\n');
-        words = newListParserFunc(lines, { loadQualityClasses: false, excludeIffy: newExludeIffy, length: length });
+        words = newListParserFunc(lines, { loadQualityClasses: false, excludeIffy: newExcludeIffy, length: length });
         words = newListFilterFunc(words);
     }
 
