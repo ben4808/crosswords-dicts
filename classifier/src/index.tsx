@@ -7,7 +7,7 @@ import { defaultParserFunc, loadWordLists, parseGinsbergDatabaseCsv, parsePeterB
 import Globals from './lib/windowService';
 
 Globals.categories = ["Adult", "Theme", "Uncommon"];
-let length = 7;
+let length = 8;
 
 // loadMainPlusBroda().then(() => {
 //   Globals.listsLoaded!();
