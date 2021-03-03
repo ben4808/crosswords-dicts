@@ -21,24 +21,24 @@ export async function loadWordLists (
         const lines = (await response.text()).split('\n');
         words = baseListParserFunc(lines, { loadQualityClasses: true, excludeIffy: baseExcludeIffy, length: length });
         words = baseListFilterFunc(words);
-    }
 
-    words.forEach(word => {
-        Globals.mergedWordList!.set(word.normalizedEntry, word);
-    });
+        words.forEach(word => {
+            Globals.mergedWordList!.set(word.normalizedEntry, word);
+        });
+    }
 
     for (let file of newListUrls) {
         let response = await fetch("http://localhost/classifier/" + file);
         const lines = (await response.text()).split('\n');
         words = newListParserFunc(lines, { loadQualityClasses: false, excludeIffy: newExcludeIffy, length: length });
         words = newListFilterFunc(words);
-    }
 
-    words.forEach(word => {
-        if (!Globals.mergedWordList!.has(word.normalizedEntry)) {
-            Globals.mergedWordList!.set(word.normalizedEntry, word);
-        }
-    });
+        words.forEach(word => {
+            if (!Globals.mergedWordList!.has(word.normalizedEntry)) {
+                Globals.mergedWordList!.set(word.normalizedEntry, word);
+            }
+        });
+    }
 }
 
 export function defaultParserFunc(lines: string[], options: ParserOptions): Word[] {
@@ -152,14 +152,14 @@ export function parsePeterBrodaWordlist(lines: string[], options: ParserOptions)
     });
 
     words.sort();
-    return stringsToWords(words);
+    return stringsToWords(words, QualityClass.Good);
 }
 
-function stringsToWords(strs: string[]): Word[] {
+function stringsToWords(strs: string[], qualityClass?: QualityClass): Word[] {
     return strs.map(str => ({
         rawEntry: str,
         normalizedEntry: str,
-        qualityClass: QualityClass.Unclassified,
+        qualityClass: qualityClass || QualityClass.Unclassified,
         categories: new Map<string, boolean>(),
     }) as Word);
 }

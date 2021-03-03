@@ -5,6 +5,7 @@ import App from './App';
   // eslint-disable-next-line
 import { defaultParserFunc, loadWordLists, parseGinsbergDatabaseCsv, parsePeterBrodaWordlist } from './lib/wordLists';
 import Globals from './lib/windowService';
+import { QualityClass } from './models/QualityClass';
 
 Globals.categories = ["Adult", "Theme", "Uncommon"];
 let length = 8;
@@ -20,15 +21,15 @@ let length = 8;
 // ["Entries3.txt"]
 
 loadWordLists(
-    ["7s_main.txt"],
+    ["2s_main.txt", "3ltr_main.txt", "4s_main.txt", "5s_main.txt", "6s_main.txt", "7s_main.txt"],
     defaultParserFunc,
-    words => words.filter(w => w.normalizedEntry.length === length),
+    words => words.filter(w => w.categories.size === 0 && w.qualityClass !== QualityClass.Iffy),
     false,
-    ["clues.txt"],
-    parseGinsbergDatabaseCsv,
-    words => words.filter(w => w.normalizedEntry.length === length),
+    ["trimmedBroda.txt"],
+    parsePeterBrodaWordlist,
+    words => words.filter(w => w.normalizedEntry.length > 7 && w.normalizedEntry.length <= 15),
     false,
-    length
+    undefined
 ).then(() => {
   Globals.listsLoaded!();
 });
